@@ -2,7 +2,7 @@ const canvas = document.querySelector('canvas');
 const ctx = canvas.getContext('2d');
 
 const resolution = 20;
-canvas.width = 800;
+canvas.width = 600;
 canvas.height = 800;
 
 const COLS = canvas.width / resolution;
@@ -24,21 +24,30 @@ let grid = buildGrid(true);
 let animationId = null;
 
 const patterns = {
-    glider: [
-        [0, 1], [1, 2], [2, 0], [2, 1], [2, 2]
-    ],
-    blinker: [
-        [0, 0], [0, 1], [0, 2]
-    ],
-    toad: [
-        [1, 0], [2, 0], [3, 0], [0, 1], [1, 1], [2, 1]
-    ],
-    beacon: [
-        [0, 0], [1, 0], [0, 1], [3, 2], [2, 3], [3, 3]
-    ]
+    glider: {
+        cost: 3,
+        pattern: [[0, 1], [1, 2], [2, 0], [2, 1], [2, 2]]
+    },
+    blinker: {
+        cost: 2,
+        pattern: [[0, 0], [0, 1], [0, 2]]
+    },
+    toad: {
+        cost: 4,
+        pattern: [[1, 0], [2, 0], [3, 0], [0, 1], [1, 1], [2, 1]]
+    },
+    beacon: {
+        cost: 5,
+        pattern: [[0, 0], [1, 0], [0, 1], [3, 2], [2, 3], [3, 3]]
+    }
 };
 
 let selectedPattern = 'glider';
+
+// Mana system
+const MAX_MANA = 10;
+let currentMana = MAX_MANA;
+const MANA_REGEN_RATE = 0.5; // Mana points per second
 
 document.getElementById('playButton').addEventListener('click', () => {
     paused = !paused;
@@ -65,8 +74,11 @@ canvas.addEventListener('click', (event) => {
     const { offsetX, offsetY } = event;
     const col = Math.floor(offsetX / resolution);
     const row = Math.floor(offsetY / resolution);
-    placePattern(col, row, patterns[selectedPattern]);
-    render(grid);
+    if (canPlacePattern(selectedPattern)) {
+        placePattern(col, row, patterns[selectedPattern].pattern);
+        depleteMana(patterns[selectedPattern].cost);
+        render(grid);
+    }
 });
 
 function update() {
@@ -75,6 +87,7 @@ function update() {
     }
     grid = nextGen(grid);
     render(grid);
+    regenerateMana();
     setTimeout(update, 500); // Adjust the delay (in milliseconds) to control the speed
 }
 
@@ -124,7 +137,7 @@ function render(grid) {
 
             let isPatternCell = false;
             if (mouseX >= 0 && mouseY >= 0) {
-                const currentPattern = patterns[selectedPattern];
+                const currentPattern = patterns[selectedPattern].pattern;
                 currentPattern.forEach(([c, r]) => {
                     if (col === mouseX + c && row === mouseY + r) {
                         isPatternCell = true;
@@ -161,7 +174,7 @@ function createPatternInventory() {
         const slot = document.createElement('div');
         slot.className = 'pattern-slot';
         slot.textContent = patternName[0].toUpperCase();
-        slot.title = patternName;
+        slot.title = `${patternName} (Cost: ${patterns[patternName].cost})`;
         slot.addEventListener('click', () => selectPattern(patternName));
         inventory.appendChild(slot);
     });
@@ -173,8 +186,43 @@ function selectPattern(patternName) {
     const slots = document.querySelectorAll('.pattern-slot');
     slots.forEach(slot => {
         slot.classList.remove('selected');
-        if (slot.title === patternName) {
+        if (slot.title.startsWith(patternName)) {
             slot.classList.add('selected');
+        }
+    });
+    updatePatternAvailability();
+}
+
+function canPlacePattern(patternName) {
+    return currentMana >= patterns[patternName].cost;
+}
+
+function depleteMana(cost) {
+    currentMana = Math.max(0, currentMana - cost);
+    updateManaBar();
+    updatePatternAvailability();
+}
+
+function regenerateMana() {
+    currentMana = Math.min(MAX_MANA, currentMana + MANA_REGEN_RATE / 2); // Divide by 2 because update is called every 500ms
+    updateManaBar();
+    updatePatternAvailability();
+}
+
+function updateManaBar() {
+    const manaFill = document.getElementById('manaFill');
+    const percentage = (currentMana / MAX_MANA) * 100;
+    manaFill.style.width = `${percentage}%`;
+}
+
+function updatePatternAvailability() {
+    const slots = document.querySelectorAll('.pattern-slot');
+    slots.forEach(slot => {
+        const patternName = slot.title.split(' ')[0].toLowerCase();
+        if (canPlacePattern(patternName)) {
+            slot.classList.remove('disabled');
+        } else {
+            slot.classList.add('disabled');
         }
     });
 }
@@ -182,3 +230,5 @@ function selectPattern(patternName) {
 // Initial setup
 createPatternInventory();
 render(grid);
+updateManaBar();
+updatePatternAvailability();
