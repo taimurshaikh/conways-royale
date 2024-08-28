@@ -1,0 +1,62 @@
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: #f0f0f0;
+    font-family: Arial, sans-serif;
+}
+
+.game-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+canvas {
+    border: 1px solid #ccc;
+}
+
+.controls {
+    margin-top: 20px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 20px;
+}
+
+#playButton {
+    padding: 5px 10px;
+    font-size: 16px;
+}
+
+.pattern-inventory {
+    display: flex;
+    gap: 10px;
+    background-color: #ddd;
+    padding: 10px;
+    border-radius: 5px;
+}
+
+.pattern-slot {
+    width: 50px;
+    height: 50px;
+    background-color: #fff;
+    border: 2px solid #999;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 24px;
+    transition: background-color 0.3s;
+}
+
+.pattern-slot:hover {
+    background-color: #f0f0f0;
+}
+
+.pattern-slot.selected {
+    border-color: #007bff;
+    background-color: #e6f2ff;
+}
